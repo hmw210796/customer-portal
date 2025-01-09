@@ -2,6 +2,7 @@
 
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./api/auth/[...nextauth]/route";
+import { UserType } from "@/types/User.d";
 
 export const getSessionData = async () => {
   const session = await getServerSession(authOptions);
@@ -12,25 +13,26 @@ export const getSessionData = async () => {
 // API
 
 export const fetchUsers = async () => {
-  let currentPage = 1;
-  const fetchedUserList = [];
-
-  while (true) {
+  const fetchAllUsers = async (currentPage = 1, fetchedUserList = []) => {
     const response = await fetch(
       `https://reqres.in/api/users?page=${currentPage}`
     );
 
     const data = await response.json();
+    const collectedUserList = fetchedUserList.concat(data.data);
 
-    fetchedUserList.push(...data.data);
+    if (currentPage > data.total_pages) {
+      return collectedUserList;
+    }
 
-    if (currentPage >= data.total_pages) break;
+    return fetchAllUsers(currentPage + 1, collectedUserList);
+  };
 
-    currentPage++;
-  }
+  const fetchedUserList = await fetchAllUsers();
 
   const filteredUserList = fetchedUserList.filter(
-    (user) => user.first_name.startsWith("G") || user.last_name.startsWith("W")
+    (user: UserType) =>
+      user?.first_name?.startsWith("G") || user?.last_name?.startsWith("W")
   );
 
   return filteredUserList;

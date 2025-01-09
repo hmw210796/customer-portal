@@ -1,5 +1,5 @@
+import { fetchUserEmail } from "@/app/actions";
 import { UserType } from "@/types/User.d";
-import { maskEmail } from "@/utils";
 import Image from "next/image";
 import React, { useState } from "react";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
@@ -9,10 +9,25 @@ type UserCardProps = {
 };
 
 const UserCard: React.FC<UserCardProps> = ({ user }) => {
-  const [masked, setMasked] = useState(true);
+  const [email, setEmail] = useState({
+    value: user.email,
+    masked: true,
+  });
 
-  const toggleMask = () => {
-    setMasked(!masked);
+  const toggleMask = async () => {
+    if (email.masked) {
+      const unmaskedEmail = await fetchUserEmail(user.id);
+
+      setEmail({
+        value: unmaskedEmail,
+        masked: !email.masked,
+      });
+    } else {
+      setEmail({
+        value: user.email,
+        masked: !email.masked,
+      });
+    }
   };
 
   return (
@@ -28,10 +43,10 @@ const UserCard: React.FC<UserCardProps> = ({ user }) => {
           {user?.first_name} {user?.last_name}
         </h2>
         <div className="flex items-center gap-2">
-          <i>{masked ? maskEmail(user?.email) : user?.email}</i>
+          <i>{email.value}</i>
 
           <button onClick={toggleMask}>
-            {masked ? <FaRegEyeSlash /> : <FaRegEye />}
+            {email.masked ? <FaRegEyeSlash /> : <FaRegEye />}
           </button>
         </div>
       </div>
